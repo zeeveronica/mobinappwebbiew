@@ -32,6 +32,7 @@ dependencies:
   flutter_inappwebview: ^5.4.3+7
   permission_handler: ^9.0.1
   android_intent: ^2.0.2
+  shared_preferences: ^2.0.15
 
 
   # The following adds the Cupertino Icons font to your application.
