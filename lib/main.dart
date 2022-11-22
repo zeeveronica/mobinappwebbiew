@@ -147,9 +147,12 @@ import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'homescreen.dart';
 
 Future main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -183,9 +186,26 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
+  String typeString = '';
+  String ipString = '';
+  String portString = '';
+  void getinputs() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    typeString = prefs.getString('type')!;
+    ipString = prefs.getString('url').toString();
+    portString = prefs.getString('port').toString();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    getinputs(); // read in initState
+  }
+
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(debugShowCheckedModeBanner: false, home: Welcome()
+    return MaterialApp(debugShowCheckedModeBanner: false, home: Welcome()
+        //ipString.isEmpty ? Welcome() : Homescreen()
         // WillPopScope(
         //   onWillPop: () => _exitApp(context),
         //   child: SafeArea(
@@ -222,87 +242,6 @@ class _MyAppState extends State<MyApp> {
   }
 }
 
-class Homescreen extends StatefulWidget {
-  const Homescreen({Key? key}) : super(key: key);
-
-  @override
-  State<Homescreen> createState() => _HomescreenState();
-}
-
-class _HomescreenState extends State<Homescreen> {
-  late InAppWebViewController _webViewController;
-  String url = "";
-  double progress = 0;
-
-  Future<bool> _exitApp(BuildContext context) async {
-    if (await _webViewController.canGoBack()) {
-      print("onwill goback");
-      //controller.goBack();
-      return Future.value(false);
-    } else {
-      Scaffold.of(context).showSnackBar(
-        const SnackBar(content: Text("No back history item")),
-      );
-      return Future.value(false);
-    }
-  }
-
-  String type = '';
-  String ip = '';
-  String port = '';
-
-  void initState() {
-    super.initState();
-    SharedPreferences.getInstance().then((prefs) {
-      setState(() {
-        type = prefs.getString('type').toString();
-        ip = prefs.getString('url').toString();
-        port = prefs.getString('port').toString();
-      });
-    });
-    print("************************");
-    print(type);
-    print(ip);
-    print(port);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () => _exitApp(context),
-      child: SafeArea(
-        child: Scaffold(
-          body: Container(
-            child: Column(children: <Widget>[
-              //progress < 1.0 ? LinearProgressIndicator(value: progress) : Container(),
-              Expanded(
-                child: InAppWebView(
-                  // initialUrlRequest: URLRequest(url: Uri.parse("http://172.16.0.20/")),
-                  //
-                  // initialUrlRequest: URLRequest(url: Uri.parse("http://bigmobilitywebapp.sba.com/")),
-                  initialUrlRequest: URLRequest(
-                      url: Uri.parse("https://mobility.beta-space.com")),
-                  initialOptions: InAppWebViewGroupOptions(
-                      crossPlatform: InAppWebViewOptions()),
-                  onWebViewCreated: (InAppWebViewController controller) {
-                    _webViewController = controller;
-                  },
-                  onProgressChanged:
-                      (InAppWebViewController controller, int progress) {
-                    setState(() {
-                      this.progress = progress / 100;
-                    });
-                  },
-                ),
-              ),
-            ]),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class Welcome extends StatefulWidget {
   const Welcome({Key? key}) : super(key: key);
 
@@ -318,35 +257,30 @@ class _WelcomeState extends State<Welcome> {
   String ipString = '';
   String portString = '';
   final _formKey = GlobalKey<FormState>();
-  String dropdownValue = 'one';
+  String dropdownValue = 'http';
   late SharedPreferences prefs;
   final _key = 'cur_r';
-  void _saveInputs() {
-    SharedPreferences.getInstance().then((prefs) {
-      // prefs.setString('type', type.text.toString());
-      // prefs.setString('type', dropdownValue.toString());
-      prefs.setString('url', url.text.toString());
-      prefs.setString('port', port.text.toString());
-    });
-    SharedPreferences.getInstance().then((prefs) {
-      setState(() {
-        typeString = prefs.getString('type')!;
-        ipString = prefs.getString('url').toString();
-        portString = prefs.getString('port').toString();
-      });
-    });
-    print("type");
+
+  void _saveInputs() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    //SharedPreferences.getInstance().then((prefs) {
+    prefs.setString('type', type.text.toString());
+    prefs.setString('type', dropdownValue.toString());
+    prefs.setString('url', url.text.toString());
+    prefs.setString('port', port.text.toString());
+    typeString = prefs.getString('type')!;
+    ipString = prefs.getString('url').toString();
+    portString = prefs.getString('port').toString();
     print(typeString);
-    print("url");
     print(ipString);
     print(portString);
+    print("testign0");
   }
 
-  //String dropdownValue = '';
   _read() async {
     prefs = await SharedPreferences.getInstance();
     setState(() {
-      dropdownValue = prefs.getString(_key) ?? "one"; // get the value
+      dropdownValue = prefs.getString(_key) ?? "http"; // get the value
     });
   }
 
@@ -363,141 +297,155 @@ class _WelcomeState extends State<Welcome> {
       body: Center(
         child: Form(
           key: _formKey,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            // crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(15.0),
-                child: DropdownButton<String>(
-                  value: dropdownValue,
-                  onChanged: (String? newValue) {
-                    setState(() {
-                      dropdownValue = newValue!;
-                    });
-                    prefs.setString(
-                        _key, dropdownValue); // save value to SharedPreference
-                  },
-                  items: [
-                    'http',
-                    'https',
-                  ].map<DropdownMenuItem<String>>((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              // crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Image.asset(
+                  'images/mobility-logo-inner-dark1.png',
+                  width: 200,
+                  height: 150,
                 ),
-              ),
-              //
-              // TextFormField(
-              //   validator: (value) {
-              //     if (value == null || value.isEmpty) {
-              //       return 'Please enter some text';
-              //     }
-              //     return null;
-              //   },
-              //   controller: type,
-              //   decoration: InputDecoration(
-              //       fillColor: Colors.grey.shade100,
-              //       focusedBorder: OutlineInputBorder(
-              //         borderSide:
-              //             const BorderSide(color: Colors.grey, width: 0.0),
-              //       ),
-              //       border: OutlineInputBorder(
-              //         borderSide:
-              //             const BorderSide(color: Colors.grey, width: 0.0),
-              //       ),
-              //       labelText: 'Enter Type ',
-              //       hintText: 'Enter Your Type http/https'),
-              // ),
+                Padding(
+                  padding: const EdgeInsets.all(15.0),
+                  child:
+                      // TextFormField(
+                      //   validator: (value) {
+                      //     if (value == null || value.isEmpty) {
+                      //       return 'Please enter some text';
+                      //     }
+                      //     return null;
+                      //   },
+                      //   controller: type,
+                      //   decoration: InputDecoration(
+                      //       fillColor: Colors.grey.shade100,
+                      //       focusedBorder: OutlineInputBorder(
+                      //         borderSide:
+                      //             const BorderSide(color: Colors.grey, width: 0.0),
+                      //       ),
+                      //       border: OutlineInputBorder(
+                      //         borderSide:
+                      //             const BorderSide(color: Colors.grey, width: 0.0),
+                      //       ),
+                      //       labelText: 'Enter Type ',
+                      //       hintText: 'Enter Your Type http/https'),
+                      // ),
 
-              SizedBox(
-                height: 10,
-              ),
-              Padding(
-                padding: const EdgeInsets.all(15.0),
-                child: TextFormField(
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter some text';
+                      DropdownButtonFormField<String>(
+                    decoration: InputDecoration(
+                        fillColor: Colors.grey.shade100,
+                        focusedBorder: OutlineInputBorder(
+                          borderSide:
+                              const BorderSide(color: Colors.grey, width: 0.0),
+                        ),
+                        border: OutlineInputBorder(
+                          borderSide:
+                              const BorderSide(color: Colors.grey, width: 0.0),
+                        ),
+                        labelText: 'Enter Port ',
+                        hintText: 'Enter Your Port'),
+                    value: dropdownValue,
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        dropdownValue = newValue!;
+                      });
+                      prefs.setString(_key,
+                          dropdownValue); // save value to SharedPreference
+                    },
+                    items: ['http', 'https']
+                        .map<DropdownMenuItem<String>>((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                SizedBox(
+                  height: 10,
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(15.0),
+                  child: TextFormField(
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter some text';
+                      }
+                      return null;
+                    },
+                    controller: url,
+                    decoration: InputDecoration(
+                        fillColor: Colors.grey.shade100,
+                        focusedBorder: OutlineInputBorder(
+                          borderSide:
+                              const BorderSide(color: Colors.grey, width: 0.0),
+                        ),
+                        border: OutlineInputBorder(
+                          borderSide:
+                              const BorderSide(color: Colors.grey, width: 0.0),
+                        ),
+                        labelText: 'Enter URL/IP',
+                        hintText: 'Enter Your URL/IP'),
+                  ),
+                ),
+                SizedBox(
+                  height: 10,
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(15.0),
+                  child: TextFormField(
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter some text';
+                      }
+                      return null;
+                    },
+                    controller: port,
+                    decoration: InputDecoration(
+                        fillColor: Colors.grey.shade100,
+                        focusedBorder: OutlineInputBorder(
+                          borderSide:
+                              const BorderSide(color: Colors.grey, width: 0.0),
+                        ),
+                        border: OutlineInputBorder(
+                          borderSide:
+                              const BorderSide(color: Colors.grey, width: 0.0),
+                        ),
+                        labelText: 'Enter Port ',
+                        hintText: 'Enter Your Port'),
+                  ),
+                ),
+                SizedBox(
+                  height: 50,
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    final isValid = _formKey.currentState?.validate();
+                    if (isValid!) {
+                      _saveInputs();
+
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => Homescreen()));
+                      return;
+                    } else {
+                      print("sucess");
                     }
-                    return null;
+                    _formKey.currentState?.save();
                   },
-                  controller: url,
-                  decoration: InputDecoration(
-                      fillColor: Colors.grey.shade100,
-                      focusedBorder: OutlineInputBorder(
-                        borderSide:
-                            const BorderSide(color: Colors.grey, width: 0.0),
-                      ),
-                      border: OutlineInputBorder(
-                        borderSide:
-                            const BorderSide(color: Colors.grey, width: 0.0),
-                      ),
-                      labelText: 'Enter URL/IP',
-                      hintText: 'Enter Your URL/IP'),
-                ),
-              ),
-              SizedBox(
-                height: 10,
-              ),
-              Padding(
-                padding: const EdgeInsets.all(15.0),
-                child: TextFormField(
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter some text';
-                    }
-                    return null;
-                  },
-                  controller: port,
-                  decoration: InputDecoration(
-                      fillColor: Colors.grey.shade100,
-                      focusedBorder: OutlineInputBorder(
-                        borderSide:
-                            const BorderSide(color: Colors.grey, width: 0.0),
-                      ),
-                      border: OutlineInputBorder(
-                        borderSide:
-                            const BorderSide(color: Colors.grey, width: 0.0),
-                      ),
-                      labelText: 'Enter Port ',
-                      hintText: 'Enter Your Port'),
-                ),
-              ),
-              SizedBox(
-                height: 50,
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  final isValid = _formKey.currentState?.validate();
-                  if (isValid!) {
-                    _saveInputs();
-                    return;
-                  } else {
-                    print("sucess");
-                  }
-                  _formKey.currentState?.save();
-                  // if (_formKey.currentState!.validate()) {
-                  //   // If the form is valid, display a snackbar. In the real world,
-                  //   // you'd often call a server or save the information in a database.
-                  //   ScaffoldMessenger.of(context).showSnackBar(
-                  //     const SnackBar(content: Text('Processing Data')),
-                  //   );
-                  // }
-                  //
-                  // Navigator.push(context,
-                  //     MaterialPageRoute(builder: (context) => Homescreen()));
-                },
-                child: Text(
-                  'Add',
-                  style: TextStyle(),
-                ),
-                style: ElevatedButton.styleFrom(
-                    minimumSize: Size(120, 50), primary: Colors.blue),
-              )
-            ],
+                  child: Text(
+                    'Add',
+                    style: TextStyle(),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                      minimumSize: Size(120, 50), primary: Colors.blue),
+                )
+              ],
+            ),
           ),
         ),
       ),
