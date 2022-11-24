@@ -154,6 +154,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'homescreen.dart';
 
+///main function
 Future main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -164,6 +165,7 @@ Future main() async {
   runApp(MyApp());
 }
 
+///MyApp class
 class MyApp extends StatefulWidget {
   @override
   _MyAppState createState() => new _MyAppState();
@@ -173,6 +175,7 @@ class _MyAppState extends State<MyApp> {
   late InAppWebViewController _webViewController;
   String url = "";
   double progress = 0;
+
   Future<bool> _exitApp(BuildContext context) async {
     if (await _webViewController.canGoBack()) {
       print("onwill goback");
@@ -186,61 +189,42 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
-  String typeString = '';
-  String ipString = '';
-  String portString = '';
-  void getinputs() async {
+  getinputs() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    typeString = prefs.getString('type')!;
-    ipString = prefs.getString('url').toString();
-    portString = prefs.getString('port').toString();
+    setState(() {
+      typeString = prefs.getString('type')!;
+      ipString = prefs.getString('url').toString();
+      portString = prefs.getString('port').toString();
+    });
   }
 
   @override
   void initState() {
     super.initState();
-    getinputs(); // read in initState
+    getinputs();
+    // read in initState
   }
 
+  String typeString = '';
+  String ipString = '';
+  String portString = '';
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(debugShowCheckedModeBanner: false, home: Welcome()
-        //ipString.isEmpty ? Welcome() : Homescreen()
-        // WillPopScope(
-        //   onWillPop: () => _exitApp(context),
-        //   child: SafeArea(
-        //     child: Scaffold(
-        //       body: Container(
-        //         child: Column(children: <Widget>[
-        //           //progress < 1.0 ? LinearProgressIndicator(value: progress) : Container(),
-        //           Expanded(
-        //             child: InAppWebView(
-        //               // initialUrlRequest: URLRequest(url: Uri.parse("http://172.16.0.20/")),
-        //               //
-        //               // initialUrlRequest: URLRequest(url: Uri.parse("http://bigmobilitywebapp.sba.com/")),
-        //               initialUrlRequest: URLRequest(
-        //                   url: Uri.parse("https://mobility.beta-space.com")),
-        //               initialOptions: InAppWebViewGroupOptions(
-        //                   crossPlatform: InAppWebViewOptions()),
-        //               onWebViewCreated: (InAppWebViewController controller) {
-        //                 _webViewController = controller;
-        //               },
-        //               onProgressChanged:
-        //                   (InAppWebViewController controller, int progress) {
-        //                 setState(() {
-        //                   this.progress = progress / 100;
-        //                 });
-        //               },
-        //             ),
-        //           ),
-        //         ]),
-        //       ),
-        //     ),
-        //   ),
-        // ),
-        );
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      // home: Welcome(),
+      home: ipString.isEmpty
+          ? Welcome()
+          : Homescreen(
+              type: typeString,
+              url: ipString,
+              port: portString,
+            ),
+    );
   }
 }
+
+///welcome class
 
 class Welcome extends StatefulWidget {
   const Welcome({Key? key}) : super(key: key);
@@ -253,43 +237,63 @@ class _WelcomeState extends State<Welcome> {
   final TextEditingController type = TextEditingController();
   final TextEditingController url = TextEditingController();
   final TextEditingController port = TextEditingController();
-  String typeString = '';
-  String ipString = '';
-  String portString = '';
+
   final _formKey = GlobalKey<FormState>();
   String dropdownValue = 'http';
-  late SharedPreferences prefs;
+  //late SharedPreferences prefs;
   final _key = 'cur_r';
+
+  /// set string to sharedpreference method
 
   void _saveInputs() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     //SharedPreferences.getInstance().then((prefs) {
-    prefs.setString('type', type.text.toString());
+    // prefs.setString('type', type.text.toString());
     prefs.setString('type', dropdownValue.toString());
     prefs.setString('url', url.text.toString());
     prefs.setString('port', port.text.toString());
-    typeString = prefs.getString('type')!;
-    ipString = prefs.getString('url').toString();
-    portString = prefs.getString('port').toString();
-    print(typeString);
-    print(ipString);
-    print(portString);
-    print("testign0");
+
+    // print(typeString);
+    // print(ipString);
+    // print(portString);
+    // print("testign0");
   }
 
-  _read() async {
-    prefs = await SharedPreferences.getInstance();
+  /// get value from Sharedpreference method
+  _getvalues() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
-      dropdownValue = prefs.getString(_key) ?? "http"; // get the value
+      typeString = prefs.getString('type')!;
+      ipString = prefs.getString('url').toString();
+      portString = prefs.getString('port').toString();
     });
+    Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (context) => Homescreen(
+                  type: typeString,
+                  url: ipString,
+                  port: portString,
+                )));
   }
+
+  // _read() async {
+  //   prefs = await SharedPreferences.getInstance();
+  //   setState(() {
+  //     dropdownValue = prefs.getString(_key) ?? "http"; // get the value
+  //   });
+  // }
 
   @override
   void initState() {
     super.initState();
-    _read(); // read in initState
+    //_getvalues();
+    // _read(); // read in initState
   }
 
+  String typeString = '';
+  String ipString = '';
+  String portString = '';
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -310,27 +314,8 @@ class _WelcomeState extends State<Welcome> {
                 Padding(
                   padding: const EdgeInsets.all(15.0),
                   child:
-                      // TextFormField(
-                      //   validator: (value) {
-                      //     if (value == null || value.isEmpty) {
-                      //       return 'Please enter some text';
-                      //     }
-                      //     return null;
-                      //   },
-                      //   controller: type,
-                      //   decoration: InputDecoration(
-                      //       fillColor: Colors.grey.shade100,
-                      //       focusedBorder: OutlineInputBorder(
-                      //         borderSide:
-                      //             const BorderSide(color: Colors.grey, width: 0.0),
-                      //       ),
-                      //       border: OutlineInputBorder(
-                      //         borderSide:
-                      //             const BorderSide(color: Colors.grey, width: 0.0),
-                      //       ),
-                      //       labelText: 'Enter Type ',
-                      //       hintText: 'Enter Your Type http/https'),
-                      // ),
+
+                      /// Type filed dropdown
 
                       DropdownButtonFormField<String>(
                     decoration: InputDecoration(
@@ -343,15 +328,15 @@ class _WelcomeState extends State<Welcome> {
                           borderSide:
                               const BorderSide(color: Colors.grey, width: 0.0),
                         ),
-                        labelText: 'Enter Port ',
-                        hintText: 'Enter Your Port'),
+                        labelText: 'Choose Type ',
+                        hintText: 'Choose Your Type'),
                     value: dropdownValue,
                     onChanged: (String? newValue) {
                       setState(() {
                         dropdownValue = newValue!;
                       });
-                      prefs.setString(_key,
-                          dropdownValue); // save value to SharedPreference
+                      // prefs.setString(_key,
+                      //     dropdownValue); // save value to SharedPreference
                     },
                     items: ['http', 'https']
                         .map<DropdownMenuItem<String>>((String value) {
@@ -365,9 +350,16 @@ class _WelcomeState extends State<Welcome> {
                 SizedBox(
                   height: 10,
                 ),
+
+                /// Get user Url
                 Padding(
                   padding: const EdgeInsets.all(15.0),
                   child: TextFormField(
+                    // inputFormatters: [
+                    //   FilteringTextInputFormatter.deny(
+                    //     RegExp("[http,https]"),
+                    //   ),
+                    // ],
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter some text';
@@ -392,6 +384,9 @@ class _WelcomeState extends State<Welcome> {
                 SizedBox(
                   height: 10,
                 ),
+
+                /// get user port
+
                 Padding(
                   padding: const EdgeInsets.all(15.0),
                   child: TextFormField(
@@ -426,11 +421,8 @@ class _WelcomeState extends State<Welcome> {
                     final isValid = _formKey.currentState?.validate();
                     if (isValid!) {
                       _saveInputs();
+                      _getvalues();
 
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => Homescreen()));
                       return;
                     } else {
                       print("sucess");
@@ -439,7 +431,9 @@ class _WelcomeState extends State<Welcome> {
                   },
                   child: Text(
                     'Add',
-                    style: TextStyle(),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   style: ElevatedButton.styleFrom(
                       minimumSize: Size(120, 50), primary: Colors.blue),

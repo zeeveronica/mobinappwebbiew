@@ -55,20 +55,20 @@ android {
         versionName flutterVersionName
     }
 
-//    signingConfigs {
-//        debug {
-//            keyAlias keystoreProperties['keyAlias']
-//            keyPassword keystoreProperties['keyPassword']
-//            storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
-//            storePassword keystoreProperties['storePassword']
-//        }
-//    }
+    signingConfigs {
+        release {
+            keyAlias keystoreProperties['keyAlias']
+            keyPassword keystoreProperties['keyPassword']
+            storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
+            storePassword keystoreProperties['storePassword']
+        }
+    }
     buildTypes {
-        debug {
-//            crunchPngs false                 // shrink images
-//            minifyEnabled false              // obfuscate code and remove unused code
-//            shrinkResources false            // shrink and remove unused resources
-//            useProguard false                // apply proguard
+        release {
+            crunchPngs false                 // shrink images
+            minifyEnabled false              // obfuscate code and remove unused code
+            shrinkResources false            // shrink and remove unused resources
+            useProguard false                // apply proguard
 
             signingConfig signingConfigs.debug
         }
